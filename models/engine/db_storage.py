@@ -2,10 +2,10 @@
 """
 Contains the class DBStorage
 """
-
+HBNB_ENV = "test"
 import models
 from models.amenity import Amenity
-from models.base_model import BaseModel, Base
+from models.base_model import BaseModel
 from models.city import City
 from models.place import Place
 from models.review import Review
@@ -14,7 +14,52 @@ from models.user import User
 from os import getenv
 import sqlalchemy
 from sqlalchemy import create_engine
+from models.base_model import Base
 from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.orm import registry, declarative_base
+import importlib
+from sqlalchemy import Column, Integer, String, create_engine
+from sqlalchemy.ext.declarative import declarative_base
+
+Base = declarative_base()
+
+class MyModel(Base):
+
+    __tablename__ = 'my_table'
+    id = Column(Integer, primary_key=True)
+    name = Column(String(255))
+
+    def __repr__(self):
+        return f"[MyModel] {self.id} {self.name}"
+
+    def __module__(self, m=None):
+        if m is None:
+            m = __import__("models")
+        return getattr(m, self.__class__.__name__)
+from models.base_model import Base
+
+class DBStorage():
+
+    def __init__(self):
+        self.__engine = create_engine("sqlite:///models.db")
+        Base = declarative_base()
+
+    def new(self, obj):
+        Base.metadata.create_all(self.__engine)
+        self.__session.add(obj)
+
+    def save(self):
+        self.__session.commit()
+
+    def __repr__(self):
+        return f"[DBStorage] {self.__engine}"
+
+
+class DBStorage:
+    __engine = create_engine(f"sqlite:///{HBNB_ENV}.db")
+
+    def drop_all(self):
+        Base.metadata.drop_all(self.__engine)
 
 classes = {"Amenity": Amenity, "City": City,
            "Place": Place, "Review": Review, "State": State, "User": User}
@@ -26,19 +71,25 @@ class DBStorage:
     __session = None
 
     def __init__(self):
-        """Instantiate a DBStorage object"""
-        HBNB_MYSQL_USER = getenv('HBNB_MYSQL_USER')
-        HBNB_MYSQL_PWD = getenv('HBNB_MYSQL_PWD')
-        HBNB_MYSQL_HOST = getenv('HBNB_MYSQL_HOST')
-        HBNB_MYSQL_DB = getenv('HBNB_MYSQL_DB')
-        HBNB_ENV = getenv('HBNB_ENV')
-        self.__engine = create_engine('mysql+mysqldb://{}:{}@{}/{}'.
-                                      format(HBNB_MYSQL_USER,
-                                             HBNB_MYSQL_PWD,
-                                             HBNB_MYSQL_HOST,
-                                             HBNB_MYSQL_DB))
-        if HBNB_ENV == "test":
-            Base.metadata.drop_all(self.__engine)
+     """Instantiate a DBStorage object"""
+     HBNB_MYSQL_USER = getenv('HBNB_MYSQL_USER')
+     HBNB_MYSQL_PWD = getenv('HBNB_MYSQL_PWD')
+     HBNB_MYSQL_HOST = getenv('HBNB_MYSQL_HOST')
+     HBNB_MYSQL_DB = getenv('HBNB_MYSQL_DB')
+     HBNB_ENV = getenv('HBNB_ENV')
+     self.__engine = create_engine('mysql+mysqldb://{}:{}@{}/{}'.
+                                  format(HBNB_MYSQL_USER,
+                                         HBNB_MYSQL_PWD,
+                                         HBNB_MYSQL_HOST,
+                                         HBNB_MYSQL_DB))
+
+    if HBNB_ENV == "test":
+        Base.metadata.drop_all(self.__engine)
+
+   # def __init__(self):
+   #self.__engine = create_engine(f"sqlite:///{HBNB_ENV}.db")
+
+
 
     def all(self, cls=None):
         """query on the current database session"""
